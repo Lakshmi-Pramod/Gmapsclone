@@ -1,52 +1,80 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import io from "socket.io-client";
+import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
+import axios from "axios";
 import "leaflet/dist/leaflet.css";
 
-const socket = io("http://127.0.0.1:5000"); // Connect to Flask WebSockets
-
 const App = () => {
-  const [userLocation, setUserLocation] = useState(null);
-  const [otherUsers, setOtherUsers] = useState({});
+    const [source, setSource] = useState([10.9027, 76.9006]); // Default: Ettimadai
+    const [destination, setDestination] = useState("");
+    const [route, setRoute] = useState([]);
+    const [error, setError] = useState("");
 
-  // Get user location on load
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      setUserLocation({ lat: latitude, lng: longitude });
+    // Function to get coordinates of a place
+    const getCoordinates = async (place) => {
+        try {
+            const response = await axios.get(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${place}`
+            );
+            if (response.data.length > 0) {
+                return [parseFloat(response.data[0].lon), parseFloat(response.data[0].lat)];
+            } else {
+                throw new Error("Location not found");
+            }
+        } catch (error) {
+            console.error("Error fetching coordinates:", error);
+            setError("Location not found.");
+            return null;
+        }
+    };
 
-      // Send location to server
-      socket.emit("update_location", { user_id: "user123", lat: latitude, lng: longitude });
-    });
+    // Function to fetch the route
+    const handleSearch = async () => {
+        setError(""); // Clear previous errors
+        if (!destination) return;
 
-    // Listen for location updates
-    socket.on("location_update", (locations) => {
-      setOtherUsers(locations);
-    });
+        const destinationCoords = await getCoordinates(destination);
+        if (!destinationCoords) return;
 
-    return () => socket.disconnect();
-  }, []);
+        try {
+            const response = await axios.post("http://127.0.0.1:5000/route", {
+                source,
+                destination: destinationCoords,
+            });
 
-  return (
-    <div>
-      <h2>Google Maps Clone (Leaflet.js + Flask)</h2>
-      <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: "80vh", width: "100%" }}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        
-        {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]}>
-            <Popup>You are here!</Popup>
-          </Marker>
-        )}
+            if (response.data.routes) {
+                setRoute(response.data.routes[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]));
+            } else {
+                setError("No route found.");
+            }
+        } catch (error) {
+            console.error("Error fetching route:", error);
+            setError("Failed to fetch route.");
+        }
+    };
 
-        {Object.entries(otherUsers).map(([userId, location]) => (
-          <Marker key={userId} position={[location.lat, location.lng]}>
-            <Popup>User {userId}</Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
-  );
+    return (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+            <h2>Smart City Navigation (Using OpenRouteService)</h2>
+            <input
+                type="text"
+                placeholder="Enter destination..."
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                style={{ padding: "8px", marginRight: "8px" }}
+            />
+            <button onClick={handleSearch} style={{ padding: "8px", cursor: "pointer" }}>
+                Search Route
+            </button>
+
+            {error && <p style={{ color: "red" }}>{error}</p>}
+
+            <MapContainer center={source} zoom={14} style={{ height: "500px", width: "100%", marginTop: "20px" }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker position={source} />
+                {route.length > 0 && <Polyline positions={route} color="red" />}
+            </MapContainer>
+        </div>
+    );
 };
 
 export default App;

@@ -1,14 +1,36 @@
 body {
-    margin: 0;
     font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    text-align: center;
 }
 
 h2 {
-    text-align: center;
-    margin: 20px 0;
+    color: #333;
 }
 
-.leaflet-container {
-    height: 80vh;
-    width: 100%;
+input {
+    width: 250px;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.map-container {
+    margin-top: 20px;
 }
