@@ -1,26 +1,24 @@
-from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend requests
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
 
-# In-memory database for tracking users' locations
-user_locations = {}
+# In-memory list to store locations (instead of MongoDB)
+locations = [
+    {"name": "Location A", "lat": 10.123, "lng": 76.456},
+    {"name": "Location B", "lat": 11.234, "lng": 77.567}
+]
 
-@app.route('/api/search', methods=['GET'])
-def search_location():
-    query = request.args.get('q')
-    # Dummy response (Replace with Google Maps API / OpenStreetMap)
-    return jsonify({"locations": [{"name": "New York", "lat": 40.7128, "lng": -74.0060}]})
+@app.route("/locations", methods=["GET"])
+def get_locations():
+    return jsonify(locations)
 
-@socketio.on('update_location')
-def handle_update_location(data):
-    user_id = data.get("user_id")
-    lat, lng = data.get("lat"), data.get("lng")
-    user_locations[user_id] = {"lat": lat, "lng": lng}
-    emit("location_update", user_locations, broadcast=True)  # Broadcast to all clients
+@app.route("/add_location", methods=["POST"])
+def add_location():
+    data = request.json
+    locations.append(data)
+    return jsonify({"message": "Location added"}), 201
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
