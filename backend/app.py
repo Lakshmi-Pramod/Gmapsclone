@@ -1,32 +1,28 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
-import openrouteservice
+import requests
 
 app = Flask(__name__)
-CORS(app)  # Allow frontend to call the backend
 
-# Replace with your OpenRouteService API Key
+# OpenRouteService API Key (Replace with your key)
 ORS_API_KEY = "5b3ce3597851110001cf6248b9aa70610e5d4dcaae9d9ef7ea9871d1"
-client = openrouteservice.Client(key=ORS_API_KEY)
 
-@app.route('/route', methods=['POST'])
+@app.route("/route", methods=["GET"])
 def get_route():
-    try:
-        data = request.get_json()
-        source = data['source']  # [longitude, latitude]
-        destination = data['destination']  # [longitude, latitude]
+    user_lat = request.args.get("user_lat")
+    user_lng = request.args.get("user_lng")
+    dest_lat = request.args.get("dest_lat")
+    dest_lng = request.args.get("dest_lng")
 
-        # Get the route from OpenRouteService
-        route = client.directions(
-            coordinates=[source, destination],
-            profile='driving-car',
-            format='geojson'
-        )
+    if not all([user_lat, user_lng, dest_lat, dest_lng]):
+        return jsonify({"error": "Missing parameters"}), 400
 
-        return jsonify(route)
+    # OpenRouteService API URL
+    route_url = f"https://api.openrouteservice.org/v2/directions/driving-car?api_key={ORS_API_KEY}&start={user_lng},{user_lat}&end={dest_lng},{dest_lat}"
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    response = requests.get(route_url)
+    data = response.json()
 
-if __name__ == '__main__':
+    return jsonify(data)
+
+if __name__ == "__main__":
     app.run(debug=True)
