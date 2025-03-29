@@ -1,38 +1,28 @@
-/* General page styling */
-html.body{
-    overflow: hidden; 
-    height: 100vh; /* Full height */
-    margin: 0;
-    padding: 0; 
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
+/* Prevent scrolling on the entire site */
+html, body {
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
-    text-align: center;
+    overflow: hidden; /* No scrolling */
+    height: 100vh;
+    width: 100vw;
+    font-family: 'Poppins', sans-serif;
 }
 
-/* Map container */
+/* Map Container */
 .map-container {
-    position: relative;
-    width: 100%;
-    height: 100vh; /* Full viewport height */
-    overflow: hidden;
-}
-
-/* Leaflet map should be fullscreen and act as the background */
-.leaflet-container {
-    width: 100% !important;
-    height: 100vh !important;
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 0; /* Keeps it in the background */
+    width: 100vw;
+    height: 100vh;
 }
 
-/* Search bar - Positioned on the top left, 40% width */
+.fullscreen-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Search Bar */
 .search-container {
     position: absolute;
     top: 10px;
@@ -45,21 +35,18 @@ body {
     width: 40%;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
     border: 1px solid #ddd;
-    z-index: 1001; /* Higher than the map */
+    z-index: 1001;
 }
 
-/* Input inside search bar */
-.search-container input[type="text"] {
+.search-container input {
     flex: 1;
     border: none;
     outline: none;
     padding: 10px;
     font-size: 14px;
-    border-radius: 25px;
     background: transparent;
 }
 
-/* Search button */
 .search-container button {
     border: none;
     background: #007bff;
@@ -75,40 +62,50 @@ body {
     background: #0056b3;
 }
 
-/* Directions panel - White background, black border and text */
-/* Make the directions panel scrollable */
-.directions-panel {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 22%;
-    height: 95vh; /* Full viewport height */
-    background: white; /* White background */
-    color: black; /* Black text */
-    border-left: 3px solid black; /* Black border */
+/* Directions Popup */
+.directions-popup {
+    position: fixed;
+    top: 30%;
+    left: 80%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.65);
+    color: black;
     padding: 20px;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-    font-size: 14px;
-    overflow-y: auto; /* Enables scrolling inside the panel */
+    width: 30%;
+    max-height: 60%;
+    overflow-y: auto;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1002;
     text-align: left;
-    scrollbar-width: thin; /* For Firefox */
-    scrollbar-color: black white; /* Black scrollbar on white background */
+    border-radius: 8px;
 }
 
-/* Custom scrollbar for WebKit browsers (Chrome, Edge, Safari) */
-.directions-panel::-webkit-scrollbar {
-    width: 8px;
+/* Close Button */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
 }
 
-.directions-panel::-webkit-scrollbar-thumb {
-    background-color: black; /* Black scrollbar */
+/* Scrollable Directions */
+.directions-popup ol {
+    padding-left: 27px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Hide Scrollbar */
+.directions-popup::-webkit-scrollbar {
+    width: 6px;
+}
+.directions-popup::-webkit-scrollbar-thumb {
+    background-color: black;
     border-radius: 4px;
 }
-
-.directions-panel::-webkit-scrollbar-track {
-    background-color: white; /* White background */
-}
-
 .leaflet-routing-container {
     display: none !important;
 }

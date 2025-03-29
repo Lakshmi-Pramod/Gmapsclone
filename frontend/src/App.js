@@ -15,21 +15,17 @@ const customIcon = new L.Icon({
   popupAnchor: [0, -40],
 });
 
-const Routing = ({ userLocation, destination, setDirections, directionsPanelRef }) => {
+const Routing = ({ userLocation, destination, setDirections }) => {
   const map = useMap();
   const routingControlRef = useRef(null);
 
   useEffect(() => {
     if (!userLocation || !destination || !map) return;
 
-    // 🛑 Remove any existing route before adding a new one
     if (routingControlRef.current) {
       map.removeControl(routingControlRef.current);
       routingControlRef.current = null;
       setDirections([]);
-      if (directionsPanelRef.current) {
-        directionsPanelRef.current.innerHTML = '<h2>Directions</h2>';
-      }
     }
 
     const routingControl = L.Routing.control({
@@ -43,10 +39,7 @@ const Routing = ({ userLocation, destination, setDirections, directionsPanelRef 
       addWaypoints: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
-      router: L.Routing.osrmv1({
-        profile: "driving",
-      }),
-      itineraryClassName: "leaflet-routing-itinerary-hidden",
+      router: L.Routing.osrmv1({ profile: "driving" }),
     }).addTo(map);
 
     routingControlRef.current = routingControl;
@@ -54,16 +47,6 @@ const Routing = ({ userLocation, destination, setDirections, directionsPanelRef 
     routingControl.on("routesfound", function (e) {
       const routes = e.routes[0].instructions.map((step) => step.text);
       setDirections(routes);
-
-      if (directionsPanelRef.current) {
-        directionsPanelRef.current.innerHTML = "<h2>Directions</h2>";
-        const itinerary = L.DomUtil.create("div", "leaflet-routing-alt");
-        e.routes[0].instructions.forEach((instruction) => {
-          const step = L.DomUtil.create("div", "leaflet-routing-alt-step", itinerary);
-          step.innerHTML = instruction.text;
-        });
-        directionsPanelRef.current.appendChild(itinerary);
-      }
     });
 
     return () => {
@@ -72,7 +55,7 @@ const Routing = ({ userLocation, destination, setDirections, directionsPanelRef 
         routingControlRef.current = null;
       }
     };
-  }, [userLocation, destination, map, setDirections, directionsPanelRef]);
+  }, [userLocation, destination, map, setDirections]);
 
   return null;
 };
@@ -82,7 +65,7 @@ const App = () => {
   const [destination, setDestination] = useState(null);
   const [searchInput, setSearchInput] = useState("");
   const [directions, setDirections] = useState([]);
-  const directionsPanelRef = useRef(null); // Ref for the custom directions panel
+  const [showPopup, setShowPopup] = useState(false); // Controls visibility of the popup
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -106,6 +89,7 @@ const App = () => {
 
       if (data.length > 0) {
         setDestination([data[0].lat, data[0].lon]);
+        setShowPopup(true); // Show the popup when search is performed
       } else {
         alert("Location not found. Try a different place.");
       }
@@ -115,8 +99,8 @@ const App = () => {
   };
 
   return (
-    <div>
-
+    <div className="app-container">
+      {/* 🔍 Search Bar */}
       <div className="search-container">
         <input
           type="text"
@@ -127,30 +111,27 @@ const App = () => {
         <button onClick={handleSearch}>Search Route</button>
       </div>
 
+      {/* 🗺️ Fullscreen Map */}
       <div className="map-container">
-        <MapContainer
-          center={DEFAULT_CENTER}
-          zoom={12}
-          style={{ height: "500px", width: "70%", float: "left" }}
-        >
+        <MapContainer center={DEFAULT_CENTER} zoom={12} className="fullscreen-map">
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {userLocation && <Marker position={userLocation} icon={customIcon} />}
           {destination && <Marker position={destination} icon={customIcon} />}
           {userLocation && destination && (
             <Routing
-              key={destination ? `${destination[0]}-${destination[1]}` : "initial"} // Force rerender when destination changes
+              key={destination ? `${destination[0]}-${destination[1]}` : "initial"}
               userLocation={userLocation}
               destination={destination}
               setDirections={setDirections}
-              directionsPanelRef={directionsPanelRef}
             />
           )}
         </MapContainer>
-        </div>
-        <div
-          ref={directionsPanelRef}
-          className="directions-panel"
-        >
+      </div>
+
+      {/* 📜 Directions Popup */}
+      {showPopup && (
+        <div className="directions-popup">
+          <button className="close-btn" onClick={() => setShowPopup(false)}>❌</button>
           <h2>Directions</h2>
           {directions.length === 0 && destination && <p>Fetching directions...</p>}
           {directions.length > 0 && (
@@ -161,8 +142,8 @@ const App = () => {
             </ol>
           )}
         </div>
-        <div style={{ clear: "both" }}></div> {/* Clear the float */}
-      </div>
+      )}
+    </div>
   );
 };
 
