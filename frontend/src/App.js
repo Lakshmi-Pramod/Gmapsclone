@@ -116,7 +116,6 @@ const App = () => {
 
   return (
     <div>
-      <h1>Google Maps Clone (Using OpenStreetMap & ORS)</h1>
 
       <div className="search-container">
         <input
